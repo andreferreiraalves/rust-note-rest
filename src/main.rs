@@ -2,13 +2,18 @@ use axum::{response::IntoResponse, routing::get, Json, Router};
 use dotenv::dotenv;
 use sqlx::{
     database,
-    sqlite::{SqlitePool, SqlitePoolOptions},
+    postgres::{PgPool, PgPoolOptions},
 };
+
 use std::sync::Arc;
 use tokio::net::TcpListener;
 
+mod handler;
+mod models;
+mod schema;
+
 pub struct AppState {
-    db: SqlitePool,
+    db: PgPool,
 }
 
 #[tokio::main]
@@ -17,7 +22,7 @@ async fn main() {
     println!("🌟 REST API Service 🌟");
 
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must set");
-    let pool = match SqlitePoolOptions::new()
+    let pool = match PgPoolOptions::new()
         .max_connections(10)
         .connect(&database_url)
         .await
