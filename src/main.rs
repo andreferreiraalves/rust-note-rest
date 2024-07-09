@@ -1,9 +1,7 @@
 use axum::{response::IntoResponse, routing::get, Json, Router};
 use dotenv::dotenv;
-use sqlx::{
-    database,
-    postgres::{PgPool, PgPoolOptions},
-};
+use handler::note_list_handler;
+use sqlx::postgres::{PgPool, PgPoolOptions};
 
 use std::sync::Arc;
 use tokio::net::TcpListener;
@@ -39,6 +37,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/ping", get(ping))
+        .route("/notes", get(note_list_handler))
         .with_state(Arc::new(AppState { db: pool.clone() }));
 
     println!("Server startde successfully at 0.0.0.0:8080");

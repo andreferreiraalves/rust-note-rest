@@ -66,7 +66,7 @@ pub async fn create_note_handler(
     Json(body): Json<CreateNoteSchema>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let id = uuid::Uuid::new_v4().to_string();
-    let query_result = sqlx::query(r#"INSERT INTO notes (id, title, content) values($1, $2, $3)"#)
+    let query_result = sqlx::query(r#"insert into notes (id, title, content) values ($1, $2, $3)"#)
         .bind(&id)
         .bind(&body.title)
         .bind(&body.content)
@@ -75,41 +75,40 @@ pub async fn create_note_handler(
         .map_err(|err: sqlx::Error| err.to_string());
 
     if let Err(err) = query_result {
-        if err.contains("Duplicate entry") {
-            let error_response = serde_json::json!({
-                "status" : "error",
+        if (err.contains("Duplicate entry")) {
+            let error_message = serde_json::json!({
+                "status": "Error",
                 "message": "Note already exists",
             });
 
-            return Err((StatusCode::CONFLICT, Json(error_response)));
+            return Err((StatusCode::CONFLICT, Json(error_message)));
         }
 
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({
-            "status": "error", "message": format!("{:?}",err )       })),
+            Json(json!({"status": "error","message": format!("{:?}", err)})),
         ));
     }
 
-    let note = sqlx::query_as!(NoteModel, r#"select * from notes where id = $1"#, &id)
+    let note = sqlx::query_as!(NoteModel, r#"SELECT * FROM notes WHERE id = $1"#, &id)
         .fetch_one(&data.db)
         .await
         .map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(json!(
-                    {
-                        "status": "error",
-                        "message":format!("{:?}",e),
-                    }
-                )),
+                Json(json!({
+                    "status": "error",
+                    "message": format!("{:?}", e),
+
+                })),
             )
         })?;
 
     let note_response = serde_json::json!({
-        "status": "success",
-        "data": serde_json::json!(&note)
-
+        "status":"success",
+        "data": serde_json::json!({
+            "note": to_note_response(&note),
+        })
     });
 
     Ok(Json(note_response))

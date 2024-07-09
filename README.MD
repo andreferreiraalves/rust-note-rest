@@ -9,3 +9,6 @@ sqlx migrate run
 
 # (Bonus!, perform migration down/revert)
 sqlx migrate revert
+
+# run app in watch mode
+cargo watch -q -c -w src/ -x run
